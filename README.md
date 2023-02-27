@@ -10,10 +10,9 @@ https://github.com/charmbracelet/gum/blob/main/README.md#Installation
 ## Usage
 ### How to install:
 <img width="600" src="install.gif"/>
-Each major release is sort from newest to oldest. Within each major release is a minor release including beta/rc versions. After install, the GOROOT will automatically change inside your .bashrc file. You may need to close and reopen your terminal for changes to take affect such as: 
-```bash
-go version
-```
+// mention go version in code block at the end
+
+Each major release is sort from newest to oldest. Within each major release is a minor release including beta/rc versions. After install, the GOROOT will automatically change inside your .bashrc file. You may need to close and reopen your terminal for changes to take affect such as ```go version```. If you want to change the path of the go version, see the next section.
 ### How to uninstall:
 <img width="600" src="uninstall.gif"/>
 Inside the path ~/.gopherden will contain each of the downloaded versions that you have downloaded using this tool. Choose the version you wish to uninstall and confirm.
