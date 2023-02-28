@@ -8,5 +8,5 @@ jobs:
       uses: actions/checkout@v2
     - name: Run gopherden
       run: curl -sLO https://github.com/SolarWolf-Code/gopherden/raw/master/gopherden && mkdir -p ~/bin && mv gopherden ~/bin/ && chmod +x ~/bin/gopherden && export PATH=$PATH:~/bin/
-    - name: Run gopherden
-      run: gopherden
+    - name: print ~/.bashrc
+      run: cat ~/.bashrc
