@@ -1,12 +1,17 @@
-name: Run gopherden on Ubuntu
-on: [push]
+name: Install Gopherden
+on:
+  push:
+    branches: [ main ]
 jobs:
-  build:
+  install:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Run gopherden
-      run: curl -sLO https://github.com/SolarWolf-Code/gopherden/raw/master/gopherden && mkdir -p ~/bin && mv gopherden ~/bin/ && chmod +x ~/bin/gopherden && export PATH=$PATH:~/bin/
-    - name: print ~/.bashrc
-      run: cat ~/.bashrc
+    - name: Download Gopherden
+      run: |
+        curl -sLO https://github.com/SolarWolf-Code/gopherden/raw/master/gopherden
+        mkdir -p ~/bin
+        mv gopherden ~/bin/
+        chmod +x ~/bin/gopherden
+        export PATH=$PATH:~/bin/
+    - name: Test Gopherden
+      run: gopherden
