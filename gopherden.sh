@@ -94,8 +94,14 @@ install_go() {
         exit
     fi
 
-    gum spin --spinner points --title "Downloading https://go.dev/dl/$final_version.linux-amd64.tar.gz" -- wget -q https://go.dev/dl/$final_version.linux-amd64.tar.gz -P ~/.gopherden
-    gum spin --spinner points --title "Extracting $final_version.linux-amd64.tar.gz" -- mkdir -p ~/.gopherden/$final_version && tar -xzf ~/.gopherden/$final_version.linux-amd64.tar.gz -C ~/.gopherden/$final_version --strip-components=1 go && rm ~/.gopherden/$final_version.linux-amd64.tar.gz
+    # check if the version is already installed
+    if [ -d ~/.gopherden/$final_version ]; then
+        # if the user wants to reinstall, just continue the script 
+        $(gum confirm "Go $final_version is already installed. Would you like to reinstall it?") && x="" || exit # have to assign a empty varaibe here so the script continues <- there is probably a better way to do this
+    fi
+
+    gum spin --spinner points --title "Downloading https://go.dev/dl/$final_version.$1" -- wget -q https://go.dev/dl/$final_version.linux-amd64.tar.gz -P ~/.gopherden
+    gum spin --spinner points --title "Extracting $final_version.$1" -- mkdir -p ~/.gopherden/$final_version && tar -xzf ~/.gopherden/$final_version.linux-amd64.tar.gz -C ~/.gopherden/$final_version --strip-components=1 go && rm ~/.gopherden/$final_version.linux-amd64.tar.gz
 
 
     # extract the tarball to ~/.gopherden and name it the version number
@@ -118,6 +124,8 @@ install_go() {
         echo "export PATH='$HOME/.gopherden/$final_version/bin':\$PATH" >> ~/.bashrc
     fi
 
+    source ~/.bashrc
+    echo "Go $final_version installed successfully!"
 }
 
 change_go_path() { 
@@ -161,7 +169,7 @@ change_go_path() {
     fi
 }
 
-uninstall_go(){
+uninstall_go(){ # ? Consider removing the GOROOT if the current version of go is the one being uninstalled
     # get all the currently installed versions of go
     installed_versions=$(ls ~/.gopherden)
     # if the length of installed_versions is greater or equal to 1, then there is at least one version installed
@@ -181,11 +189,9 @@ uninstall_go(){
 }
 
 choose_option() {
-    # use gum choose to ask the user for which option to use
     option=$(gum choose "Install Go" "Uninstall Go" "Change Go Path")
-
-      if [[ $option == "Install Go" ]]; then
-        install_go
+    if [[ $option == "Install Go" ]]; then
+        install_go $1
     elif [[ $option == "Change Go Path" ]]; then
         change_go_path
     elif [[ $option == "Uninstall Go" ]]; then
@@ -193,4 +199,140 @@ choose_option() {
     fi
 }
 
-choose_option
+# Checks if bash is the current shell
+
+if [ !  -n "$BASH_VERSION" ]; then # TODO: add zsh and fish support <- this will require a rewrite of the change_go_path function and part of the install_go function
+    echo "Bash is not the active shell"
+    exit
+fi
+
+# Checks the OS and installs gum if it is not installed
+# TODO: add download support based on OS
+download_type=""
+if [[ -f /etc/redhat-release ]]; then
+    if ! rpm -q gum >/dev/null 2>&1; then
+        echo "Installing gum..."
+        echo '[charm]
+        name=Charm
+        baseurl=https://repo.charm.sh/yum/
+        enabled=1
+        gpgcheck=1
+        gpgkey=https://repo.charm.sh/yum/gpg.key' | sudo tee /etc/yum.repos.d/charm.repo
+        sudo yum install gum
+        # clear the console
+        clear
+    fi
+    # check uname -m
+    if [[ $(uname -m) == "x86_64" ]]; then
+        download_type="linux-amd64.tar.gz"
+    elif [[ $(uname -m) == "aarch64" ]]; then
+        download_type="linux-arm64.tar.gz"
+    fi
+elif [[ -f /etc/debian_version ]]; then
+    if ! dpkg -s gum >/dev/null 2>&1; then
+        echo "Installing gum..."
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
+        sudo apt update && sudo apt install gum
+        # clear the console
+        clear
+    fi
+    # check uname -m
+    if [[ $(uname -m) == "x86_64" ]]; then
+        download_type="linux-amd64.tar.gz"
+    elif [[ $(uname -m) == "aarch64" ]]; then
+        download_type="linux-arm64.tar.gz"
+    fi
+elif [[ -d /nix ]]; then
+    if ! nix-env -q gum >/dev/null 2>&1; then
+        echo "Installing gum..."
+        nix-env -iA nixpkgs.gum
+        # clear the console
+        clear
+    fi
+    # check uname -m
+    if [[ $(uname -m) == "x86_64" ]]; then
+        download_type="linux-amd64.tar.gz"
+    elif [[ $(uname -m) == "aarch64" ]]; then
+        download_type="linux-arm64.tar.gz"
+    fi
+elif [[ -f /etc/arch-release ]]; then
+    if ! pacman -Q gum >/dev/null 2>&1; then
+        echo "Installing gum..."
+        pacman -S gum
+        # clear the console
+        clear
+    fi
+    # check uname -m
+    if [[ $(uname -m) == "x86_64" ]]; then
+        download_type="linux-amd64.tar.gz"
+    elif [[ $(uname -m) == "aarch64" ]]; then
+        download_type="linux-arm64.tar.gz"
+    fi
+elif [[ "$(uname)" == "Darwin" ]]; then
+    if ! brew list | grep gum >/dev/null 2>&1; then
+        echo "Installing gum..."
+        brew install gum
+        # clear the console
+        clear
+    fi
+    # check uname -m
+    if [[ "$(uname -m)" == "arm64" ]]; then
+        download_type="darwin-arm64.pkg"
+    else
+        download_type="darwin-amd64.pkg"
+    fi
+elif [[ "$(uname)" == "Linux" ]] && hash brew 2>/dev/null; then
+    if ! brew list | grep gum >/dev/null 2>&1; then
+        echo "Installing gum..."
+        brew install gum
+        # clear the console
+        clear
+    fi
+    # check uname -m
+    if [[ "$(uname -m)" == "x86_64" ]]; then
+        download_type="linux-amd64.tar.gz"
+    elif [[ "$(uname -m)" == "aarch64" ]]; then
+        download_type="linux-arm64.tar.gz"
+    fi
+elif [[ "$(uname)" == "Android" ]]; then
+    if ! termux-info >/dev/null 2>&1; then
+        echo "Please install Termux to use Gum on Android."
+    elif ! pkg list-installed | grep gum >/dev/null 2>&1; then
+        echo "Installing gum..."
+        pkg install gum
+    fi
+    # check uname -m
+    if [[ "$(uname -m)" == "aarch64" ]]; then
+        download_type="linux-arm64.tar.gz"
+    fi
+
+elif [[ "$(uname -o)" == "Msys" ]] || [[ "$(uname -o)" == "Cygwin" ]]; then
+    if ! scoop list | grep gum >/dev/null 2>&1; then
+        echo "Installing gum..."
+        scoop install charm-gum
+        # clear the console
+        clear
+    fi
+    download_type="windows-amd64.zip"
+elif [[ -f /etc/alpine-release ]]; then
+    if ! apk info gum >/dev/null 2>&1; then
+        echo "Installing gum..."
+        apk add gum
+        # clear the console
+        clear
+    fi
+    # check uname -m
+    if [[ $(uname -m) == "x86_64" ]]; then
+        download_type="linux-amd64.tar.gz"
+    elif [[ $(uname -m) == "aarch64" ]]; then
+        download_type="linux-arm64.tar.gz"
+    fi
+else
+    echo "Unknown or unsupported system"
+    exit
+fi
+
+# call choose_option and pass the download_type
+choose_option $download_type
