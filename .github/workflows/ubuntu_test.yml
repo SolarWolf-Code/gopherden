@@ -7,4 +7,4 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run gopherden
-      run: bash gopherden.sh
+      run: curl -sLO https://github.com/SolarWolf-Code/gopherden/raw/master/gopherden && mkdir -p ~/bin && mv gopherden ~/bin/ && chmod +x ~/bin/gopherden && export PATH=$PATH:~/bin/
