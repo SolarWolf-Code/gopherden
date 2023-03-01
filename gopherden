@@ -199,6 +199,16 @@ choose_option() {
     fi
 }
 
+# function to add gopherden to the PATH permanently. the PATH should ~/bin
+check_script() {
+    # check if the ~/bin dir is in the PATH using grep
+    if ! grep -q "export PATH.*~/bin" ~/.bashrc; then
+        echo "export PATH='~/bin':\$PATH" >> ~/.bashrc
+    fi
+}
+check_script
+
+
 # Checks if bash is the current shell
 
 if [ !  -n "$BASH_VERSION" ]; then # TODO: add zsh and fish support <- this will require a rewrite of the change_go_path function and part of the install_go function
