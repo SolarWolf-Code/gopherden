@@ -181,7 +181,12 @@ uninstall_go(){ # ? Consider removing the GOROOT if the current version of go is
             exit
         fi
         # uninstall the version and remove the GOROOT and PATH exports
-        confirm=$(gum confirm "Uninstall?") && echo "Uninstalling $uninstall_version..." && rm -rf ~/.gopherden/$uninstall_version && sed -i "/export GOROOT.*$uninstall_version/d" ~/.bashrc && sed -i "/export PATH.*$uninstall_version/d" ~/.bashrc || echo "Uninstall cancelled, exiting..." && exit
+        # check if the only version of go is the one being uninstalled
+        if [[ ${#installed_versions[@]} -eq 1 && ${installed_versions[0]} == $uninstall_version ]]; then
+            confirm=$(gum confirm "Uninstall?") && echo "Uninstalling $uninstall_version..." && rm -rf ~/.gopherden/$uninstall_version && sed -i "/export GOROOT.*$uninstall_version/d" ~/.bashrc && sed -i "/export PATH.*$uninstall_version/d" ~/.bashrc || echo "Uninstall cancelled, exiting..." && exit
+        else
+            confirm=$(gum confirm "Uninstall?") && echo "Uninstalling $uninstall_version..." && rm -rf ~/.gopherden/$uninstall_version || echo "Uninstall cancelled, exiting..." && exit
+        fi
     else
         echo "No versions of Go installed. Exiting..."
         exit
